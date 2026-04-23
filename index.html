@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나만의 심리테스트</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <style>
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            padding: 20px;
+            /* 모바일에서 콘텐츠가 중앙에 오도록 최대 너비 설정 */
+            max-width: 600px; 
+            margin: 0 auto;
+        }
+        
+        .option-button { 
+            padding: 10px 20px; 
+            margin: 10px; 
+            cursor: pointer; 
+            background-color: #f0f0f0; 
+            border: 1px solid #ccc;
+            display: block; 
+            width: 80%; 
+            max-width: 400px; 
+            margin: 10px auto;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .hidden { 
+            display: none; 
+        } 
+        
+        /* 이미지 기본 스타일 (시작/결과 이미지 모두 적용) */
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        
+        #result-title {
+            color: #d81b60; 
+            /* 제목에 줄바꿈이 들어갔으므로, 텍스트 크기를 조금 키워 가독성 유지 */
+            font-size: 1.5em;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="test-container">
+        
+        <div id="start-screen">
+            <h1>성격 결산</h1>
+            <img src="test_main_image.jpg" alt="심리테스트 메인 이미지" style="width: 300px;">
+            <h3>"나도 몰랐던 나의 귀여운 점 찾기"</h3>
+            <button id="start-button" class="option-button">테스트 시작하기</button>
+        </div>
+
+        <div id="question-screen" class="hidden">
+            <h2 id="question-text"></h2>
+            <div id="options-container">
+            </div>
+            <p><small id="progress-text"></small></p>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <h2>당신은...</h2>
+            <h3 id="result-title"></h3> 
+            <p id="result-description"></p>
+            <img id="result-image" src="" alt="결과 이미지" style="width: 300px;">
+            <button class="option-button" onclick="window.location.reload()">눈 씻고 다시 보기</button>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================================
+        // 1. 데이터 정의 (파일 이름: gomo_result.jpg, imo_result.jpg로 가정)
+        // ==========================================================
+        const questions = [
+            {
+                q: "Q1. 올 한해 나를 가장 잘 표현하는 상황은?",
+                options: [
+                    { text: "회의 시작 1분 만에 숨 쉬듯 하품함", value: 10 },
+                    { text: "출근길엔 아프고, 퇴근길엔 쌩쌩함", value: 10 },
+                    { text: "커피 마시고도 커피 필요함", value: 20 },
+                    { text: "귀여운 릴스 보고 인류애 충전함", value: 20 }
+                ]
+            },
+            {
+                q: "Q2. 올 한해 내가 가장 많이 한 말은?",
+                options: [
+                    { text: "아 피곤해 ...", value: 20 },
+                    { text: "오늘 뭐 먹지?", value: 10 },
+                    { text: "엥 내 주말 어디갔어", value: 10 },
+                    { text: "역시 귀여운 게 짱이야", value: 20 }
+                ]
+            },
+            {
+                q: "Q3. 올 한해 내 지갑을 자주 열리게 한 것은?",
+                options: [
+                    { text: "우리가 어떤 민족? 배달의 민족", value: 10 },
+                    { text: "지친 마음을 달래줄 초코 음료", value: 20 },
+                    { text: "급발진 택시비", value: 10 },
+                    { text: "계산 직전 얹은 작고 귀여운 무언가", value: 20 }
+                ]
+            },
+        ];
+
+        const results = [
+            { 
+                minScore: 0, 
+                maxScore: 30, 
+                title: "삼촌력 MAX <br> 👉🏻확신의 삼촌상👈🏻", 
+                desc: "7월에 만나요 삼촌들 🍼👶🏻🫧", 
+                image: "gomo_result.jpg" 
+            },
+            { 
+                minScore: 31, 
+                maxScore: 60, 
+                title: "삼촌력 MAX <br> 👉🏻확신의 삼촌상👈🏻", 
+                desc: "7월에 만나요 삼촌들 🍼👶🏻🫧", 
+                image: "imo_result.jpg" 
+            }
+        ];
+
+        // ==========================================================
+        // 2. 전역 변수 및 DOM 요소 초기화
+        // ==========================================================
+        let currentQuestionIndex = 0; 
+        let totalScore = 0; 
+
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressText = document.getElementById('progress-text');
+        const resultTitle = document.getElementById('result-title');
+        const resultDescription = document.getElementById('result-description');
+        const resultImage = document.getElementById('result-image');
+
+        // ==========================================================
+        // 3. 이벤트 핸들러 및 함수
+        // ==========================================================
+
+        document.getElementById('start-button').onclick = function() {
+            startScreen.classList.add('hidden'); 
+            questionScreen.classList.remove('hidden'); 
+            renderQuestion(); 
+        };
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+                return;
+            }
+
+            const currentQ = questions[currentQuestionIndex];
+            questionText.textContent = currentQ.q;
+            optionsContainer.innerHTML = ''; 
+            progressText.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+
+            currentQ.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.className = 'option-button';
+                button.onclick = () => selectAnswer(option.value); 
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function selectAnswer(scoreValue) {
+            totalScore += scoreValue; 
+            currentQuestionIndex++; 
+            renderQuestion(); 
+        }
+
+        function showResult() {
+            questionScreen.classList.add('hidden'); 
+            resultScreen.classList.remove('hidden'); 
+
+            const finalResult = results.find(r => totalScore >= r.minScore && totalScore <= r.maxScore);
+
+            if (finalResult) {
+                // innerHTML을 사용하여 <br> 태그(줄바꿈)가 적용되도록 수정
+                resultTitle.innerHTML = finalResult.title; 
+                resultDescription.textContent = finalResult.desc;
+                
+                // ⭐ 최종 이미지 파일 경로 설정
+                resultImage.src = finalResult.image; 
+                resultImage.alt = finalResult.title + " 이미지";
+            } else {
+                resultTitle.textContent = "결과 범위 초과";
+                resultDescription.textContent = "테스트 결과 범위에 맞는 결과를 찾을 수 없습니다.";
+                resultImage.src = "";
+                resultImage.alt = "";
+            }
+        }
+    </script>
+
+</body>
+</html>
